@@ -98,12 +98,12 @@ window.Sonner = {
       .then(result => {
         // Update the message and start the timeout
         const msg = typeof opts.success === 'string' ? opts.success : opts.success(result);
-        toast.setTitle(msg).setIcon('success').setDuration(opts.duration ?? TOAST_LIFETIME);
+        toast.setTitle(msg).setIcon('success').setType('success').setDuration(opts.duration ?? TOAST_LIFETIME);
         return result;
       })
       .catch(err => {      
         const msg = typeof opts.error === 'string' ? opts.error : opts.error(err);
-        toast.setTitle(msg).setIcon('error').setDuration(opts.duration ?? TOAST_LIFETIME);
+        toast.setTitle(msg).setIcon('error').setType('error').setDuration(opts.duration ?? TOAST_LIFETIME);
         throw err;
       });
 
@@ -370,6 +370,23 @@ function renderToast(list, msg, opts = {}) {
         else      title.textContent = msg;
         return this;
       },
+      setDescription: function(description, raw = false) {
+        let desc = document.querySelector(`[data-sonner-toast][data-id=${id}] [data-description]`);
+        if (description == null) {
+          desc?.remove();
+          return this;
+        }
+
+        if (!desc) {
+          desc = document.createElement('div');
+          desc.setAttribute('data-description', '');
+          document.querySelector(`[data-sonner-toast][data-id=${id}] [data-content]`).appendChild(desc);
+        }
+
+        if (raw)  desc.innerHTML = msg;
+        else      desc.textContent = msg;
+        return this;
+      },
       setIcon: function (icon) {
         const ico = getIcon(icon) ?? '';    
         document.querySelector(`[data-sonner-toast][data-id=${id}] [data-icon]`).innerHTML = ico;
@@ -378,6 +395,10 @@ function renderToast(list, msg, opts = {}) {
       setDuration: function(duration) {
         this.target.setAttribute('data-duration', duration);
         registerRemoveTimeout(this.target);
+        return this;
+      },
+      setType: function (type) {
+        this.target.setAttribute('data-type', type);
         return this;
       },
       dismiss: function() {
