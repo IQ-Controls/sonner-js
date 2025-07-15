@@ -78,6 +78,15 @@ window.Sonner = {
     return Sonner.show(msg, { icon: 'warning', type: "warning", ...opts });
   },
   /**
+   * Shows a new loading toast with a specific message. 
+   * The toast by default will not disapear until dismissed.
+   * @param {string} msg - The message to display in the toast.
+   * @returns {object}
+   */
+  loading(msg, opts = {}) {
+    return Sonner.show(msg, { icon: 'loading', type: 'loading', duration: -1, ...opts });
+  },
+  /**
    * Shows a promise loading toast
    * @template T promise data type
    * @param {Promise<T>} promise 
@@ -87,13 +96,7 @@ window.Sonner = {
    * @param {string|(data : Error) => string} opts.success function callback / message to show when errored
    */
   promise(promise, opts = {}) {
-    const toast = Sonner.show(opts.loading ?? 'Loading...', {
-      icon: 'loading',
-      type: 'loading',
-      ...opts,
-      duration: -1,
-    });
-
+    const toast = Sonner.loading(opts.loading ?? 'Loading...', { ...opts, duration: -1 });    
     promise
       .then(value => {
         // Update the message and start the timeout. We set everything first so the bind has a opportunity to change it if needed.
@@ -118,7 +121,7 @@ window.Sonner = {
    * @param {Object} options - An object with the following properties:
    * @param {string} options.type - The type of the toast. The type can be one of the following values: "success", "error", "info", "warning", or "neutral".
    * @param {string} options.description - The description to display in the toast.
-   * @returns {void}
+   * @returns {object}
    */
   show(msg, opts = {}) {
     const list = document.getElementById("sonner-toaster-list");
