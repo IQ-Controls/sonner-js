@@ -95,16 +95,18 @@ window.Sonner = {
     });
 
     promise
-      .then(result => {
-        // Update the message and start the timeout
-        const msg = typeof opts.success === 'string' ? opts.success : opts.success(result);
-        toast.setTitle(msg).setIcon('success').setType('success').setDuration(opts.duration ?? TOAST_LIFETIME);
-        return result;
+      .then(value => {
+        // Update the message and start the timeout. We set everything first so the bind has a opportunity to change it if needed.
+        toast.setIcon('success').setType('success').setDuration(opts.duration ?? TOAST_LIFETIME);
+        const msg = typeof opts.success === 'string' ? opts.success : opts.success.bind(toast)(value);
+        if (msg !== undefined) toast.setTitle(msg);
+        return value;
       })
-      .catch(err => {      
-        const msg = typeof opts.error === 'string' ? opts.error : opts.error(err);
-        toast.setTitle(msg).setIcon('error').setType('error').setDuration(opts.duration ?? TOAST_LIFETIME);
-        throw err;
+      .catch(reason => {
+        toast.setIcon('error').setType('error').setDuration(opts.duration ?? TOAST_LIFETIME);
+        const msg = typeof opts.error === 'string' ? opts.error : opts.error.bind(toast)(reason);
+        if (msg !== undefined) toast.setTitle(msg);
+        throw reason;
       });
 
     return promise;
@@ -124,17 +126,17 @@ window.Sonner = {
 
     // Wait for the toast to be mounted before registering swipe events
     //window.setTimeout(function () {
-      const el = list.children[0];
-      const height = el.getBoundingClientRect().height;
+    const el = list.children[0];
+    const height = el.getBoundingClientRect().height;
 
-      el.setAttribute("data-mounted", "true");
-      el.setAttribute("data-initial-height", height);
-      el.style.setProperty("--initial-height", `${height}px`);
-      list.style.setProperty("--front-toast-height", `${height}px`);
+    el.setAttribute("data-mounted", "true");
+    el.setAttribute("data-initial-height", height);
+    el.style.setProperty("--initial-height", `${height}px`);
+    list.style.setProperty("--front-toast-height", `${height}px`);
 
-      registerSwipe(id);
-      refreshProperties();
-      toast.setDuration(opts.duration ?? TOAST_LIFETIME);
+    registerSwipe(id);
+    refreshProperties();
+    toast.setDuration(opts.duration ?? TOAST_LIFETIME);
     //}, 16);
     return toast;
   },
@@ -292,7 +294,7 @@ function renderToast(list, msg, opts = {}) {
   const id = genid();
   const count = list.children.length;
   const asset = getIcon(opts.icon) ?? opts.icon;
-  
+
 
   toast.outerHTML = `<li
   aria-live="polite"
@@ -359,18 +361,18 @@ function renderToast(list, msg, opts = {}) {
     </div>
 </li>
    `;
-   
-  return { 
-    id, 
+
+  return {
+    id,
     toast: {
       target: document.querySelector(`[data-id="${id}"]`),
       setTitle: function (msg, raw = false) {
         const title = document.querySelector(`[data-sonner-toast][data-id=${id}] [data-title]`);
-        if (raw)  title.innerHTML = msg;
-        else      title.textContent = msg;
+        if (raw) title.innerHTML = msg;
+        else title.textContent = msg;
         return this;
       },
-      setDescription: function(description, raw = false) {
+      setDescription: function (description, raw = false) {
         let desc = document.querySelector(`[data-sonner-toast][data-id=${id}] [data-description]`);
         if (description == null) {
           desc?.remove();
@@ -383,16 +385,16 @@ function renderToast(list, msg, opts = {}) {
           document.querySelector(`[data-sonner-toast][data-id=${id}] [data-content]`).appendChild(desc);
         }
 
-        if (raw)  desc.innerHTML = msg;
-        else      desc.textContent = msg;
+        if (raw) desc.innerHTML = description;
+        else desc.textContent = description;
         return this;
       },
       setIcon: function (icon) {
-        const ico = getIcon(icon) ?? '';    
+        const ico = getIcon(icon) ?? '';
         document.querySelector(`[data-sonner-toast][data-id=${id}] [data-icon]`).innerHTML = ico;
         return this;
       },
-      setDuration: function(duration) {
+      setDuration: function (duration) {
         this.target.setAttribute('data-duration', duration);
         registerRemoveTimeout(this.target);
         return this;
@@ -401,12 +403,12 @@ function renderToast(list, msg, opts = {}) {
         this.target.setAttribute('data-type', type);
         return this;
       },
-      dismiss: function() {
+      dismiss: function () {
         Sonner.remove(this.target.getAttribute("data-id"))
         return this;
       }
     }
-};
+  };
 }
 
 /**
@@ -418,11 +420,11 @@ function renderToast(list, msg, opts = {}) {
  * @returns {void}
  */
 function registerRemoveTimeout(el) {
-  if (!el.getAttribute("data-id")) 
+  if (!el.getAttribute("data-id"))
     throw new Error('invalid target for removal');
 
   const lifetime = el.getAttribute('data-duration') ?? TOAST_LIFETIME;
-  if (lifetime < 0) 
+  if (lifetime < 0)
     return;
 
   // Clear previous duration
